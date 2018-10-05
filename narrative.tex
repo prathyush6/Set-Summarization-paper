@@ -1,0 +1,361 @@
+\documentclass[twoside, leqno, twocolumn]{article}
+\usepackage{ltexpprt}
+
+
+\usepackage{fullpage} %[cm]
+\usepackage{lmodern} % enhanced version of computer modern
+\usepackage[T1]{fontenc} % for hyphenated characters
+ \usepackage{amsmath}
+ \usepackage{amssymb}
+\usepackage{microtype}
+\usepackage{enumerate}
+\usepackage{ctable} % provides toprule, bottomrule, midrule
+%\usepackage[ruled,linesnumbered]{algorithm2e}
+% \usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{breqn}
+\DeclareCaptionType{copyrightbox}
+\usepackage{color}
+\newcommand{\expect}{\mathrm{Exp}}
+\newcommand{\hide}[1]{}
+%\newtheorem{theorem}{Theorem} % {\bfseries}{\itshape}
+%\newtheorem{lemma}{Lemma}[section]{\bfseries}{\itshape}
+% \theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+%\newdef{claim}{Claim}
+%
+%\theoremstyle{definition}
+%\newtheorem{definition}[lemma]{Definition} % {\bfseries}{\itshape}
+%
+%\theoremstyle{remark}
+\newtheorem{claim}[lemma]{Claim} % {\bfseries}{\itshape}
+\newtheorem{observation}[lemma]{Observation} % {\bfseries}{\itshape}
+%
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\opt}{\mathrm{OPT}}
+\newcommand{\eopt}{E_{\mathrm{OPT}}}
+\newcommand{\edeg}{e_{\mathrm{deg}}}
+\newcommand{\prob}{\textsc{Spectral Radius Minimization}}
+\newcommand{\degr}{\mathrm{d}}
+\newcommand{\Vol}{\mathrm{Vol}}
+\newcommand{\wmax}{w_{\max}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\diff}{\textsc{diff}}
+\newcommand{\intS}{\textsc{Int}}
+\newcommand{\cost}{\textsc{cost}}
+\newcommand{\elt}{\text{elt}}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\DeclareMathOperator*{\nodes}{nodes}
+\DeclareMathOperator*{\walks}{walks}
+\DeclareMathOperator*{\ct}{count}
+
+\title{Generating narratives for epidemic forecasts}
+%\author{}
+%\date{}
+%
+\begin{document}
+%\maketitle
+%
+
+%\section{Introduction}
+
+\input{abstract.tex}
+\input{introduction.tex}
+\input{relatedwork.tex}
+\input{preliminaries.tex}
+\input{methods.tex}
+\input{results.tex}
+\input{conclusions.tex}
+
+\section{Using a submodular maximization approach for SSP}
+We consider $k=1$.
+Let $\mathcal{S} = \{S_1,\ldots,S_m\}$ denote the $m$ sets, which are subsets of
+a ground set $U$. $T\subseteq U$ is a given target set.  For a subset
+$X\subseteq \mathcal{S}$, let $u(X)=\bigcup_{S\in X} S$ denote the union of all the
+sets in $X$.  The SSP problem is to
+find sets $X=\{S_{i_1},\ldots,S_{i_r}\}$ and $Y=\{S_{j_1},\ldots,S_{j_s}\}$ such that
+\[
+T= u(X) - u(Y)
+\]
+The cost of such a representation is $|X|+|Y|$.
+
+Let $\mathcal{S}_T=\{S\in\mathcal{S}: S\cap T=\emptyset\}$.
+For a set $Z\subseteq U-T$, let $h(Z)$ denote the minimum number of sets from $\mathcal{S}_T$
+needed to cover $Z$. We will assume $\mathcal{S}$ contains all singleton sets, so that
+$h(Z)$ is always well defined.
+Define functions $f,g:2^{\mathcal{S}}\rightarrow \mathbb{R}_{\geq 0}$ in the following manner.
+For $X\subset \mathcal{S}$, $f(X)=|X| + h(u(X)-T)$ and $g(X)=|u(X)\cap T|$.
+
+\begin{claim}
+Suppose $X\subseteq\mathcal{S}$ such that $g(X)=|T|$. Then, there exists a solution $(X, Y)$
+to the SSP problem with cost equal to $f(X)$. The converse also holds.
+\end{claim}
+\begin{proof}
+Since $g(X)=|T|$, we have $T\subseteq u(X)$. Let $Y\subseteq \mathcal{S}_T$
+such that $u(X)-T \subseteq u(Y)$, and $|Y|$ is minimized.
+Such a $Y$ exists, and $|Y|=h(u(X)-T)$. Also, by construction, $u(Y)\cap T=\emptyset$.
+Therefore,
+\[
+T = u(X) - u(Y),
+\]
+and $|X|+|Y| = f(X)$.
+\end{proof}
+
+\section{Preliminaries and problem formulation}
+
+\subsection{Notation}
+Let $U=\{x_1,\ldots,x_n\}$ denote a ground set, and let 
+$\mathcal{S}=\{S_1,\ldots,S_m\}\subset 2^U$ denote a set of subsets of $U$. 
+We assume that $\{x_1\},\ldots,\{x_n\}\in\mathcal{S}$, i.e., all the singleton
+sets are in the set system.
+Let $C(i_1,\ldots,i_k) = S_{i_1}\cap S_{i_2}\ldots\cap S_{i_k}$, where
+each $S_{i_j}\in \mathcal{S}$. We refer to $C(i_1,\ldots,i_k)$ as a ``clause''.
+Let $\intS_k=\{C(i_1,\ldots,i_{k'}): i_j\leq m, k'\leq k\}$
+denote the set of all intersections of at most $k$ sets from $\mathcal{S}$.
+We consider representations of a subset $T\subseteq U$ of the following form:
+\[
+T = \cup_{\ell=1}^r C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}) - 
+ \cup_{\ell=r+1}^s C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}),
+\]
+where $C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}})\in \intS_k$.
+We say the clauses $C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}})$ for $\ell\leq r$
+are ``positive'', whereas, those for $\ell=r+1,\ldots,s$ are ``negative''.
+For $C=C(i_1,\ldots,i_{k'})\in \intS_k$, we define $\cost(C)=k'$ as the
+number of sets whose intersection defines $C$.
+For a representation of $T$ of the above type, we associate
+a cost $\alpha\sum_{\ell=1}^r k_{\ell} + \beta \sum_{\ell=r+1}^s k_{\ell}$,
+where $\alpha$ and $\beta$ are parameters. 
+
+\noindent
+\textbf{Exact and approximate representations.}
+The representation of the form above, where $T$ is equal to the difference of
+unions of clauses, is said to be an \emph{exact} representation.
+We consider the natural \emph{approximate} representations, where 
+$T$ is ``close'' to $\cup_{\ell=1}^r C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}) -
+ \cup_{\ell=r+1}^s C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}})$.
+\smallskip
+
+\subsection{Problems}
+\noindent
+\textbf{1. Set summarization problem} (SSP). Given an instance $(U, \mathcal{S}, T, k)$,
+the objective is to find a representation
+\[
+T = \cup_{\ell=1}^r C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}) - 
+ \cup_{\ell=r+1}^s C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}),
+\]
+such that the cost 
+$\alpha\sum_{\ell=1}^r k_{\ell} + \beta \sum_{\ell=r+1}^s k_{\ell}$ is minimized.
+
+\noindent
+\textbf{2. Positive version of the Set summarization problem} (positive-SSP). 
+In this restriction, we consider representations consisting of only positive clauses, i.e.,
+\[
+T = \cup_{\ell=1}^r C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}),
+\]
+so that the cost $\alpha\sum_{\ell=1}^r k_{\ell}$ is minimized.
+
+
+\noindent
+\textbf{3. Approximate version of the Set summarization problem
+with false negatives} (approx-SSP-fn). 
+In this version, the objective is to find a representation for a set $T'\subseteq T$ such that
+\[
+T' = \cup_{\ell=1}^r C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}) - 
+ \cup_{\ell=r+1}^s C(i^{\ell}_1,\ldots,i^{\ell}_{k_{\ell}}),
+\]
+such that $|T'|\geq (1-\epsilon)|T|$, and $\cost(T')$ is minimized.
+
+\noindent
+\textbf{4. Approximate version of the Set summarization problem
+with false positives and false negatives} (approx-SSP). 
+
+\subsection{More general formulation}
+
+We have $p$ groups of sets $\mathcal{S}_j=\{S_{j1},\ldots,S_{jm_j}\}$, for $j=1,\ldots,p$.
+Let $\mathcal{R}_j=\{R_{ji_1},\ldots,R_{ji_j}\}\subseteq\mathcal{S}_j$ 
+be a subset of the $j$th group. Let $\elt(\mathcal{R}_j) = \cup_{R\in \mathcal{R}_j} R$
+denote the union of the sets in $\mathcal{R}_j$.
+A hyperset is denoted by $\mathcal{R}=(\mathcal{R}_1,\ldots,\mathcal{R}_p)$,
+and consists of the following elements
+\[
+\cap_{j=1}^p \elt(\mathcal{R}_j)
+\]
+
+The cost $\cost(\mathcal{R})$ of such a hyperset is taken to be
+\[
+\cost(\mathcal{R}) = \sum_{j=1}^p |\mathcal{R}_j| = \sum_{j=1}^p i_j
+\]
+
+We consider representations of a (target) subset $T\subseteq U$ of the following form:
+\[
+T = \cup_{\ell=1}^r \mathcal{R}^{\ell} - \cup_{\ell=r+1}^s \mathcal{R}^{\ell},
+\]
+i.e., a difference of unions of hypersets. The cost of such a representation is
+\[
+\sum_{\ell=1}^s\cost(\mathcal{R}^{\ell})
+\]
+
+\noindent
+\textbf{Generalization of Set Cover.}
+The set cover problem is a special case of the above formulation, with a single group
+$\mathcal{S}=\mathcal{S}_1$, so that a hyperset is an individual set $R\in\mathcal{S}$.
+
+\noindent
+\textbf{Generalization of \cite{xiang:dmkd2011}.}
+The formulation above generalizes the 2-dimensional setting considered by
+\cite{xiang:dmkd2011} in the following manner. The input consists of a set
+$\mathcal{T}$ of $n_t$ transactions and a set $\mathcal{I}$ of $n_i$ items.
+For $T\subset\mathcal{T}$ and $I\subset\mathcal{I}$,
+a hyper-rectangle $H=T\times I=\{(i, j): i\in T, j\in I\}$.
+
+Consider a universe $U=\{(i, j): i\in \mathcal{T}, j\in\mathcal{I}\}$ of $n_tn_i$ elements.
+We have two groups of sets:
+(1) $\mathcal{S}_1$ has a set $\{(i, j): j\in \mathcal{I}\}$ for each transaction 
+$i\in\mathcal{T}$, and
+(2) $\mathcal{S}_2$ has a set $\{(i, j): i\in \mathcal{T}\}$ for each item $i\in\mathcal{I}$.
+
+\section{Related work}
+
+The work of Xiang et al. \cite{xiang:dmkd2011} is directly related, and can be
+considered as a special case of positive-SSP. The data comes from a transactional database,
+where we have sets $\mathcal{I}$ and $\mathcal{T}$ of items and transactions, respectively.
+Let $n_I=|\mathcal{I}|$ and $n_T=|\mathcal{T}|$. Then, the database
+can be represented as a 0/1 matrix of dimensions $n_I\times n_T$.
+The ground set $U$ is the set of all the matrix elements.
+The set system $\mathcal{S}$ consists of all sets of the form
+$T=\{i_1,\ldots,i_r\}\times\{t_1,\ldots,t_s\}$, where $\{i_1,\ldots,i_r\}\subset\mathcal{I}$
+and $\{t_1,\ldots,t_s\}\subset\mathcal{T}$; these are referred to as 
+``hyperrectangles'', and $\cost(T)=r+s$.
+Xiang et al. give a logarithmic approximation for the positive-SSP problem
+for such instances.
+
+\section{Questions and results}
+
+\begin{enumerate}
+\item
+SSP vs positive-SSP: for the 2D case \cite{xiang:dmkd2011}, 
+we can construct a set $S$ corresponding to a rectangle of 1's with a single 0,
+such that the optimum solution of positive-SSP version is close to three times
+the optimum solution of the SSP version.
+Can this gap be made larger for general SSP instances?
+\item
+The set system in \cite{xiang:dmkd2011} has bounded VC-dimension for ``most'' sets. 
+Can we use this to improve the logarithmic approximation factor?
+\item
+Stronger hardness for SSP, compared to positive-SSP
+\item
+Logarithmic approximation for positive-SSP, at least when $k$ is bounded.
+\end{enumerate}
+
+\section{Approximation results}
+
+\subsection{Set cover version}
+
+We consider the approximation algorithm for the single group case, which 
+is the set cover generalization. We use a simple LP rounding approach.
+
+Let $\mathcal{S} = \{S_1,\ldots,S_m\}$ denote the $m$ sets. We have variables
+$x(S)$ and $y(S)$ corresponding to the set $S$ being used in a positive and negative 
+sense, respectively. We have the following LP
+
+\begin{eqnarray*}
+\min \sum_S x(S) + y(S) && \text{s.t.}\\
+\forall i\in T,\ \sum_{S\ni i} x(S) &\geq& 1\\
+\forall i\not\in T, S\ni i,\ \sum_{S'\ni i} y(S') &\geq& x(S)\\
+\forall i\in T, S\ni i,\ y(S) &=& 0\\
+\forall S,\ x(S), y(S) &\geq& 0
+\end{eqnarray*}
+
+Let $f=\max_i |\{S: i\in S\}|$ be the maximum number of sets containing any element.
+Our algorithm rounds the fractional variables $x(S), y(S)$ to integral variables
+$X(S), Y(S)$ in the following steps.
+\begin{enumerate}
+\item
+For each $S$, if $x(S)\geq 1/f$, round it to 1, i.e., set 
+variable $X(S)=1$. Otherwise, $X(S)=0$.
+\item
+For each $S$, round $y(S)$ to 1 with probability 
+$\min\{1, 16f{\epsilon^2}\log{mn}\cdot y(S)\}$.
+\end{enumerate}
+
+\begin{lemma}
+The rounded integral solution $X(\cdot), Y(\cdot)$ is feasible and has
+cost at most $O(f\log{m} OPT)$, where $OPT$ is the cost of the optimal solution,
+with probability at least $1-\frac{1}{mn}$.
+\end{lemma}
+
+\begin{proof}
+For each $i\in T$, there exists at least one $S\ni i$ such that $x(S)\geq 1/f$,
+by definition of $f$. Therefore, by our rounding step, 
+for each $i\in T$, we have $\sum_{S\ni i} X(S)\geq 1$, and
+$X(S)\leq f\cdot x(S)$.
+
+Next, consider any $i\not\in T$ and $S\ni i$. We have
+$\sum_{S'\ni i} fy(S') \geq X(S)$. We only consider constraints with $X(S)=1$; 
+else, the constraint is automatically satisfied after the rounding.
+Let $y'(S') = \min\{1, 16f{\epsilon^2}\log{mn}\cdot y(S)\}$.
+Then, we have $\sum_{S'\ni i} y'(S') \geq 16\epsilon^2\log{mn}$.
+$Y(S')$ is a random variable which is 1 with probability $y'(S')$. 
+We ignore any constraint which has $y'(S')=1$ for some $S'$, since $Y(S')=1$,
+and such a constraint would be automatically satisfied.
+
+Therefore,
+$E[Y(S')] = y'(S')$, and $E[\sum_{S'\ni i} Y(S')] \geq 16\epsilon^2\log{mn}$.
+
+It follows by randomized rounding, that if
+we round $y(S')$ to 1 with probability $\min\{1, cf\log{m} y(S')\}$, then with high
+probability, we have $\sum_{S'\ni i} Y(S')\geq X(S)$
+\end{proof}
+
+\newpage
+
+\section{Submodularity}
+
+Let $S = \{S_1, S_2, ..., S_m\}$ be a collection of subsets of the ground set $U = \{x_1,  ..., x_n \}$.  Let $T$ be a target set such that $T \subseteq U$. Let $X, Y$ be subsets of $S$.
+
+\begin{definition}
+Let $S_T$ be a collection of subsets in $S$ such that 
+\begin{equation}
+	S_T = \{ S_i \in S : S_i \cap T = \phi \} \nonumber
+\end{equation}
+i.e., it consists of all subsets of $S$ that are disjoint with $T$
+\end{definition}
+\begin{definition}
+ Let $v(X)$ be the union of all subsets in $X$ i.e.,
+ \begin{equation}
+ 		v(X) = \cup_{S_i \in X} \; S_i  \nonumber
+ \end{equation}
+\end{definition}
+\begin{definition}
+	For any $T \subseteq U$, let  $cov(T)$ be defined as the minimum number of sets from $S_T$ needed to cover all elements of $T$, i.e.,
+	\begin{equation}
+		 	cov(T) = \min_{Z: Z \subseteq S, T- v(Z) = \phi} \; |Z|
+	\end{equation}
+\end{definition}
+\begin{definition}
+	Let $f \colon 2^S \to \mathbb{Z}$ be a function defined as $f(X) = |X| + cov( v(X) - T)$, i.e., sum of the number of subsets in $X$ and the minimum number of subsets needed to cover all elements in $v(X) - T$.
+\end{definition}
+\begin{lemma}
+	The function $f$ is submodular.
+\end{lemma}
+
+\begin{definition}
+	Let $g \colon 2^S \to \mathbb{Z}$ be a function defined as $g(X) = | v(X) \cap T|$, i.e, number of elements of $T$ covered by elements in $X$. 
+\end{definition}
+
+\begin{lemma}
+	The function $g$ is submodular.
+\end{lemma}
+\begin{proof}
+
+\end{proof}
+\newpage
+ 
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
+
+ 
